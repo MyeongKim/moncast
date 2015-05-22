@@ -11,5 +11,18 @@ block content
 		$('button').click(function(){
 			var id = $('input[name="id"]').val();
 			var pw = $('input[name="pw"]').val();
-			$.post( "http://localhost:4000/login", { id: id, pw: pw } );
+			if ( id =="" || pw == ""){
+				alert("login again");
+				location.reload();
+			} else{
+				$.post( "http://localhost:4000/login", { id: id, pw: pw } ).done(function( data ) {
+					if(data == "yes"){
+						alert("login success!");
+						location.href = '/main';
+					} else {
+						alert("login failed..");
+						location.reload();
+					}
+				});
+			}
 		});
