@@ -1,4 +1,30 @@
 extends layout
 
 block content
-	h3 Main Page..
+	h3 Main Page - 방 목록
+	input(type="text" name="roomTitle" placeholder="Enter room title")
+	button(type="button") 방 만들기
+	br
+	br
+	#RoomList
+		-var array = roomArray
+		-for(var item in array)
+			a(href="#") #{array[item].title}
+			hr
+
+	script.
+		$('button').click(function(){
+			alert("test");
+			var title = $('input[name="roomTitle"]').val();
+			if ( title == ""){
+				alert("enter correctly");
+				location.reload();
+			} else{
+				$.post( "http://localhost:4000/makeRoom", { title : title }).done(function( data ) {
+					if(data == "end"){
+						alert("room created!");
+						// get room id 
+						location.reload();
+				}})
+			}
+		});

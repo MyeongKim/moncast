@@ -10,15 +10,15 @@ block content
 			var id = $('input[name="id"]').val();
 			var pw = $('input[name="pw"]').val();
 			if ( id =="" || pw == ""){
-				alert("login again");
+				alert("enter correctly.");
 				location.reload();
 			} else{
-				$.post( "http://localhost:4000/login", { id: id, pw: pw } ).done(function( data ) {
+				$.post( "http://localhost:4000/new", { id: id, pw: pw } ).done(function( data ) {
 					if(data == "yes"){
-						alert("login success!");
-						location.href = '/main';
+						alert("Your id is created!");
+						location.href = '/';
 					} else {
-						alert("login failed..");
+						alert("you have to use another id.");
 						location.reload();
 					}
 				});

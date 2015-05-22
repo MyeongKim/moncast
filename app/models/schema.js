@@ -7,9 +7,18 @@ var userSchema = new mongoose.Schema({
 	pw : String,
 	tweet_id : [String]} , { collection : 'users'});
 
+var roomSchema = new mongoose.Schema({
+	title : { type: String, unique: true},
+	roomId : String,
+	bj : String,
+	pw : String} , { collection : 'rooms'});
+
+
 // compile to Model
 var User = mongoose.model('User', userSchema);
+var Room = mongoose.model('Room', roomSchema);
 
 module.exports = {
-	User : User
+	User : User,
+	Room : Room
 };

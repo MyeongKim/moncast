@@ -9,6 +9,7 @@ var session = require('express-session');
 var io = require('socket.io').listen(server);
 
 var User = require('./app/models/schema').User;
+var Room = require('./app/models/schema').Room;
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -26,6 +27,33 @@ app.get('/', function (req, res) {
 
 app.get('/new', function (req, res) {
 	res.render('new');
+});
+
+app.post('/new', function (req, res){
+	var id = req.body.id;
+	var pw = req.body.pw;
+	console.log("new id  " + "id : " + id + "pw : " + pw);
+	var query = User.findOne({});
+	query.where('id', id);
+	query.exec( function(err, result){
+		if (err) return handleError(err);
+		if (result){
+			console.log("이미 존재하는 아이디 ")
+			res.end("no");
+		} else{
+			console.log("아이디를 새로 생성합니다. ");
+			var user1 = new User ({
+				id : id,
+				name : id,
+				pw : pw
+			});
+
+			user1.save(function(err, results){
+				console.log(results);
+			})
+			res.end("yes");
+		}
+	});
 });
 
 app.post('/login', function (req, res){
@@ -50,10 +78,35 @@ app.post('/login', function (req, res){
 });
 
 app.get('/main',function (req, res){
-	res.render('main');
-})
-io.sockets.on('connection', function (socket) {
+	var query = Room.find({});
+	query.exec( function(err, result){
+		if (err) return handleError(err);
+		if (result){
+			console.log("방 목록 가져오기 ");
+			// req.session.userId
+			console.log(result);
+			res.render('main', {roomArray : result});
+		} else{
+			console.log("방이 하나도 없습니다.");
+			res.render('main');
+		}
+	});
+	
+});
 
+app.post('/makeRoom', function(req, res){
+	var title = req.body.title;
+	var room = new Room ({
+		title : title,
+		bj : req.session.userId
+	});
+	room.save(function(err, results){
+				console.log(results);
+				res.end("end");
+	});
+});
+
+io.sockets.on('connection', function (socket) {
 
 });
 
