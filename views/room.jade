@@ -1,0 +1,28 @@
+extends layout
+
+block content
+	script.
+		$(document).ready(function(){
+			var socket = io.connect('', {query :'title=' + '#{title}' + '&name=' + '#{name}'});
+			// alert(#{title});
+			// alert(#{name});
+			$('button').click(function(){
+				var $msg = $("input[name='chatWords']");
+				socket.emit('new message', $msg.val());
+				$msg.val('');
+
+				return false;
+			});
+			socket.on('new message', function(obj){
+				var messageHtml = "<span id="+ obj.userId + ">"+ obj.userId + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
+				$('#output').append(messageHtml);
+			});
+		});
+	h3 Chat Room
+	h2 title : #{title}
+	#people
+		#peopleCount
+		#peopleList
+	#output
+	input(type="text" name="chatWords" placeholder="enter your words")
+	button(type="button") 전송

@@ -1,15 +1,18 @@
 var path = require('path');
 
 var express = require('express');
-var app = express();
-var server = require('http').createServer(app);
 var bodyParser = require('body-parser');
 var session = require('express-session');
+var params = require('express-params');
 
-var io = require('socket.io').listen(server);
 
 var User = require('./app/models/schema').User;
 var Room = require('./app/models/schema').Room;
+
+var app = express();
+params.extend(app);
+var server = require('http').createServer(app);
+var io = require('socket.io').listen(server);
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
@@ -17,8 +20,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(session({ resave: true,
-                  saveUninitialized: true,
-                  secret: 'uwotm8' }));
+									saveUninitialized: true,
+									secret: 'uwotm8' }));
 
 // router
 app.get('/', function (req, res) {
@@ -106,12 +109,50 @@ app.post('/makeRoom', function(req, res){
 	});
 });
 
-io.sockets.on('connection', function (socket) {
+app.get('/room/:room_title', function(req, res){
+	res.render('room', {title : req.params.room_title, name : req.session.userId});
+});
 
+app.get('/admin', function(req,res){
+	res.render('admin');
 });
 
 
-server.listen(4000);
+//after redis
+var userId = {};
+
+io.sockets.on('connection', function (socket) {
+	// 로컬에선 확인 안됨
+	// var userIp = socket.client.request.headers['x-forwarded-for'];
+	// console.log("user Ip " + userIp+ "Connected");
+	// var userId[socke.id]
+
+	if (!socket.handshake.query.title) {
+				socket.disconnect();
+				return;
+		}
+		// for (var id in usertags) {
+		// 		if (usertags[id] === socket.handshake.query.tag) {
+		// 				socket.disconnect();
+		// 				return;
+		// 		}
+		// }
+
+
+		var title = socket.handshake.query.title.trim().replace(/\s/g,'');
+		title = title.substr(0, 10);
+		console.log('title : ' + title);
+
+		var name = socket.handshake.query.name;
+		console.log('name : ' + name);
+
+		socket.on('new message', function(msg){
+			console.log(msg);
+			io.emit('new message', {"msg" : msg, "userId" : name })
+		});
+
+
+});
 
 function userCheck(id,pw){
 	var query = User.findOne({});
@@ -126,3 +167,5 @@ function userCheck(id,pw){
 		}
 	});
 	};
+
+server.listen(4000);

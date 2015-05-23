@@ -9,7 +9,7 @@ block content
 	#RoomList
 		-var array = roomArray
 		-for(var item in array)
-			a(href="#") #{array[item].title}
+			a(href="/room/#{array[item].title}") #{array[item].title}
 			hr
 
 	script.
