@@ -99,6 +99,7 @@ app.get('/main',function (req, res){
 
 app.post('/makeRoom', function(req, res){
 	var title = req.body.title;
+
 	var room = new Room ({
 		title : title,
 		bj : req.session.userId
@@ -121,38 +122,52 @@ app.get('/admin', function(req,res){
 //after redis
 var userId = {};
 
-io.sockets.on('connection', function (socket) {
-	// 로컬에선 확인 안됨
-	// var userIp = socket.client.request.headers['x-forwarded-for'];
-	// console.log("user Ip " + userIp+ "Connected");
-	// var userId[socke.id]
 
-	if (!socket.handshake.query.title) {
-				socket.disconnect();
-				return;
-		}
-		// for (var id in usertags) {
-		// 		if (usertags[id] === socket.handshake.query.tag) {
-		// 				socket.disconnect();
-		// 				return;
-		// 		}
-		// }
+// io.sockets.on('connection', function (socket) {
+// 	// 로컬에선 확인 안됨
+// 	// var userIp = socket.client.request.headers['x-forwarded-for'];
+// 	// console.log("user Ip " + userIp+ "Connected");
+// 	// var userId[socke.id]
 
-
-		var title = socket.handshake.query.title.trim().replace(/\s/g,'');
-		title = title.substr(0, 10);
-		console.log('title : ' + title);
-
-		var name = socket.handshake.query.name;
-		console.log('name : ' + name);
-
-		socket.on('new message', function(msg){
-			console.log(msg);
-			io.emit('new message', {"msg" : msg, "userId" : name })
-		});
+// 	if (!socket.handshake.query.title) {
+// 				socket.disconnect();
+// 				return;
+// 		}
+// 		// for (var id in usertags) {
+// 		// 		if (usertags[id] === socket.handshake.query.tag) {
+// 		// 				socket.disconnect();
+// 		// 				return;
+// 		// 		}
+// 		// }
 
 
+// 		var title = socket.handshake.query.title.trim().replace(/\s/g,'');
+// 		title = title.substr(0, 10);
+// 		console.log('title : ' + title);
+
+// 		var name = socket.handshake.query.name;
+// 		console.log('name : ' + name);
+
+// 		socket.on('new message', function(msg){
+// 			console.log(msg);
+// 			io.emit('new message', {"msg" : msg, "userId" : name })
+// 		});
+	
+// 		socket.on('new message', function(msg){
+// 			console.log(msg);
+// 			io.emit('new message', {"msg" : msg, "userId" : name })
+// 		});
+
+
+// });
+
+var test = '/user/12';
+var nsp = io.of(test);
+nsp.on('connection', function(socket){
+  console.log('someone connected');
 });
+
+nsp.emit('new message', 'everyone!');
 
 function userCheck(id,pw){
 	var query = User.findOne({});

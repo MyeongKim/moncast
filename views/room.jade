@@ -3,19 +3,27 @@ extends layout
 block content
 	script.
 		$(document).ready(function(){
-			var socket = io.connect('', {query :'title=' + '#{title}' + '&name=' + '#{name}'});
-			// alert(#{title});
-			// alert(#{name});
+			var connect = function (ns) {
+				return io.connect('http://localhost:4000'+ns, {
+					query: 'ns='+ns,
+					resource: "socket.io"
+				});
+			}
+			var socket = connect('/user/12');
+			//- var socket = io.connect('http://localhost:4000/my-namespace');
+			//- var socket = io.connect('asdf', {query :'title=' + '#{title}' + '&name=' + '#{name}'});
 			$('button').click(function(){
 				var $msg = $("input[name='chatWords']");
 				socket.emit('new message', $msg.val());
 				$msg.val('');
-
 				return false;
 			});
-			socket.on('new message', function(obj){
-				var messageHtml = "<span id="+ obj.userId + ">"+ obj.userId + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
-				$('#output').append(messageHtml);
+			//- socket.on('new message', function(obj){
+			//- 	var messageHtml = "<span id="+ obj.userId + ">"+ obj.userId + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
+			//- 	$('#output').append(messageHtml);
+			//- });
+			socket.on('new message', function(msg){
+				alert(msg);
 			});
 		});
 	h3 Chat Room
