@@ -9,12 +9,11 @@ block content
 	#RoomList
 		-var array = roomArray
 		-for(var item in array)
-			a(href="/room/#{array[item].title}") #{array[item].title}
+			a(href="/room/#{array[item].title}") #{array[item].title_entered}
 			hr
 
 	script.
 		$('button').click(function(){
-			alert("test");
 			var title = $('input[name="roomTitle"]').val();
 			if ( title == ""){
 				alert("enter correctly");
@@ -25,6 +24,10 @@ block content
 						alert("room created!");
 						// get room id 
 						location.reload();
-				}})
+					} else if (data =="already used title"){
+						alert("Please enter another title");
+						location.reload();
+					}
+				});
 			}
 		});

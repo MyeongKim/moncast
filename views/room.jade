@@ -3,31 +3,33 @@ extends layout
 block content
 	script.
 		$(document).ready(function(){
-			var connect = function (ns) {
-				return io.connect('http://localhost:4000'+ns, {
-					query: 'ns='+ns,
-					resource: "socket.io"
-				});
-			}
-			var socket = connect('/user/12');
-			//- var socket = io.connect('http://localhost:4000/my-namespace');
-			//- var socket = io.connect('asdf', {query :'title=' + '#{title}' + '&name=' + '#{name}'});
+
+			var socket = io.connect('http://localhost:4000');
+			var roomId = '#{title}';
+			socket.emit('join:room', {roomId: roomId});
+
+			//- var connect = function (ns) {
+			//- 	return io.connect('http://localhost:4000'+ns, {
+			//- 		query: 'ns='+ns,
+			//- 		name: '#{name}',
+			//- 		resource: "socket.io",
+			//- 		'forceNew':false
+			//- 	});
+			//- }
+			//- var socket = connect('/#{title}');
 			$('button').click(function(){
 				var $msg = $("input[name='chatWords']");
-				socket.emit('new message', $msg.val());
+				if(!$msg.val()) return;
+				socket.emit('new message', {roomId : roomId, msg : $msg.val(), name : '#{name}'});
 				$msg.val('');
-				return false;
 			});
-			//- socket.on('new message', function(obj){
-			//- 	var messageHtml = "<span id="+ obj.userId + ">"+ obj.userId + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
-			//- 	$('#output').append(messageHtml);
-			//- });
-			socket.on('new message', function(msg){
-				alert(msg);
+			socket.on('new message', function(obj){
+				var messageHtml = "<span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
+				$('#output').append(messageHtml);
 			});
 		});
 	h3 Chat Room
-	h2 title : #{title}
+	h2 title : #{title_entered}
 	#people
 		#peopleCount
 		#peopleList

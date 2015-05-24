@@ -9,6 +9,7 @@ var userSchema = new mongoose.Schema({
 
 var roomSchema = new mongoose.Schema({
 	title : { type: String, unique: true},
+	title_entered : String,
 	roomId : String,
 	bj : String,
 	pw : String} , { collection : 'rooms'});

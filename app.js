@@ -94,80 +94,106 @@ app.get('/main',function (req, res){
 			res.render('main');
 		}
 	});
-	
 });
 
 app.post('/makeRoom', function(req, res){
-	var title = req.body.title;
-
-	var room = new Room ({
-		title : title,
-		bj : req.session.userId
-	});
-	room.save(function(err, results){
-				console.log(results);
-				res.end("end");
+	var title_entered = req.body.title;
+	var title = title_entered.trim().replace(/\s/g,'');
+	var query = Room.find({});
+	query.where('title', title);
+	query.exec( function(err, result){
+		if (err) return handleError(err);
+		if (typeof result[0] !== 'undefined' ){
+			console.log(" 방 이름 중복 ");
+			console.log(result);
+			res.end('already used title');
+		} else{
+			var room = new Room ({
+				title : title,
+				title_entered : title_entered,
+				bj : req.session.userId
+			});
+			room.save(function(err, results){
+						console.log(results);
+						res.end("end");
+			});
+		}
 	});
 });
 
 app.get('/room/:room_title', function(req, res){
-	res.render('room', {title : req.params.room_title, name : req.session.userId});
+	var title = req.params.room_title;
+	var query = Room.find({});
+	query.where('title', title);
+	query.exec( function(err, result){
+		if(err) return handleError(err);
+		console.log(result);
+		res.render('room', {title : req.params.room_title, title_entered : result[0].title_entered , name : req.session.userId});
+	})
 });
 
 app.get('/admin', function(req,res){
 	res.render('admin');
 });
 
+// socket.io
+var userNames = {};
+var numUsers = 0;
 
-//after redis
-var userId = {};
+// var userId = {}; // Nicknames by socket.id
+var url = require('url');
+io.sockets.on('connection', function (socket) {
 
+	var addedUser = false;
+	socket.on('join:room', function(data){
+		socket.join('room' + data.roomId);
+	});
 
-// io.sockets.on('connection', function (socket) {
-// 	// 로컬에선 확인 안됨
-// 	// var userIp = socket.client.request.headers['x-forwarded-for'];
-// 	// console.log("user Ip " + userIp+ "Connected");
-// 	// var userId[socke.id]
+	socket.on('new message', function(obj){
+		io.sockets.in('room'+obj.roomId).emit('new message', obj);
+	});
 
-// 	if (!socket.handshake.query.title) {
-// 				socket.disconnect();
-// 				return;
-// 		}
-// 		// for (var id in usertags) {
-// 		// 		if (usertags[id] === socket.handshake.query.tag) {
-// 		// 				socket.disconnect();
-// 		// 				return;
-// 		// 		}
-// 		// }
+	// socket.on('add user', function(userName){
+	// 	socket.userName = userName;
+	// 	userNames[userName] = userName;
+	// 	++numUsers;
+	// 	addedUser = true;
+	// 	socket.emit('login', {
+	// 		numUsers : numUsers
+	// 	});
+	// });
 
-
-// 		var title = socket.handshake.query.title.trim().replace(/\s/g,'');
-// 		title = title.substr(0, 10);
-// 		console.log('title : ' + title);
-
-// 		var name = socket.handshake.query.name;
-// 		console.log('name : ' + name);
-
-// 		socket.on('new message', function(msg){
-// 			console.log(msg);
-// 			io.emit('new message', {"msg" : msg, "userId" : name })
-// 		});
-	
-// 		socket.on('new message', function(msg){
-// 			console.log(msg);
-// 			io.emit('new message', {"msg" : msg, "userId" : name })
-// 		});
+	// socket.broadcast.emit('user joined', {
+	// 	userName : socket.userName;
+	// 	numUsers : numUsers
+	// });
 
 
-// });
+	// 로컬에선 확인 안됨
+	// var userIp = socket.client.request.headers['x-forwarded-for'];
+	// console.log("user Ip " + userIp+ "Connected");
+	// var userId[socke.id];
 
-var test = '/user/12';
-var nsp = io.of(test);
-nsp.on('connection', function(socket){
-  console.log('someone connected');
+	// var ns = url.parse(socket.handshake.url, true).query.ns;
+	// if (!ns) {
+	// 	socket.disconnect();
+	// 	return;
+	// }
+
+	// console.log('connected ns: '+ns);
+	// socket.join(ns);
+
+	// io.of(ns).on('connection', function (socket) {
+	// 	console.log(' namespace connection');
+	// 	socket.on('new message', function(obj){
+	// 		console.log(obj);
+	// 		io.of(ns).emit('new message', obj);
+	// 	});
+	// 	socket.on('disconnect', function() {
+	// 		socket.disconnect();
+	// 	});
+	// });
 });
-
-nsp.emit('new message', 'everyone!');
 
 function userCheck(id,pw){
 	var query = User.findOne({});
