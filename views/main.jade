@@ -2,31 +2,38 @@ extends layout
 
 block content
 	h3 Main Page - 방 목록
-	input(type="text" name="roomTitle" placeholder="Enter room title")
-	button(type="button") 방 만들기
+	.row
+		.input-field.col.s3
+			input.validate(type='text' name="roomTitle")
+			label Please enter your title
+		button.waves-effect.waves-light.btn 방 만들기
 	br
 	br
 	#RoomList
-		-var array = roomArray
-		-for(var item in array)
-			a(href="/room/#{array[item].title}") #{array[item].title_entered}
-			hr
+		ul.collection
+			-var array = roomArray
+			-for(var item in array)
+				li.collection-item
+					a(href="/room/#{array[item].title}") #{array[item].title_entered}
 
 	script.
 		$('button').click(function(){
 			var title = $('input[name="roomTitle"]').val();
 			if ( title == ""){
-				alert("enter correctly");
-				location.reload();
+				Materialize.toast('enter correctly', 1000, '', function(){
+					location.reload();
+				});
 			} else{
 				$.post( "http://localhost:4000/makeRoom", { title : title }).done(function( data ) {
 					if(data == "end"){
-						alert("room created!");
+						Materialize.toast('room created!', 1000, '', function(){
 						// get room id 
-						location.reload();
+							location.reload();
+						});
 					} else if (data =="already used title"){
-						alert("Please enter another title");
-						location.reload();
+						Materialize.toast('Please enter another title', 1000, '', function(){
+							location.reload();
+						});
 					}
 				});
 			}

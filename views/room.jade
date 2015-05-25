@@ -24,14 +24,14 @@ block content
 				$msg.val('');
 			});
 			socket.on('new message', function(obj){
-				var messageHtml = "<span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
+				var messageHtml = "<div class='messageHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></div>";
 				$('#output').append(messageHtml);
 			});
 			socket.on('add user', function(array){
 				$('#peopleCount').text(array.length);
 				$('#peopleList ul').empty();
 				for ( index in array){
-					$('#peopleList ul').append('<li>'+ array[index]+'</li>')
+					$('#peopleList ul').append('<li class="collection-item">'+ array[index]+'</li>')
 				}
 			});
 
@@ -40,14 +40,16 @@ block content
 			});
 
 			socket.on('connect twice', function(){
-				alert('다른 창에서 실행되고 있습니다.');
-				socket.disconnect();
-				location.href = '/main';
+				Materialize.toast('다른 창에서 실행되고 있습니다.', 1000, '', function(){
+					socket.disconnect();
+					location.href = '/main';
+				});
 			});
 
 			socket.on('disconnect', function(){
-				alert('연결이 중단되었습니다..');
-				location.href = '/';
+				Materialize.toast('연결이 중단되었습니다..', 1000, '', function(){
+					location.href = '/';
+				});
 			});
 		});
 	h3 Chat Room
@@ -55,8 +57,14 @@ block content
 	#people
 		#peopleCount 0
 		#peopleList
-			ul
-	#status
-	#output
-	input(type="text" name="chatWords" placeholder="enter your words")
-	button(type="button") 전송
+			ul.collection
+				li.collection-item
+	.row
+		.col.s10
+			#status
+			#output
+	.row
+		.input-field.col.s10
+			input.validate(type='text' name="chatWords")
+			label enter your words
+		button.waves-effect.waves-light.btn 전송하기

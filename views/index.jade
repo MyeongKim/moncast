@@ -2,27 +2,35 @@ extends layout
 
 block content
 	h3 로그인 페이지
-	input(type="text" name="id" placeholder="Please enter your id")
-	input(type="text" name="pw" placeholder="Please enter your pw")
-	button(type="button") 로그인
+	.row
+		.input-field.col.s3
+			input#id.validate(type='text')
+			label(for='first_name') Please enter your id
+		.input-field.col.s3
+			input#pw.validate(type='text')
+			label(for='last_name') Please enter your pw
+	button.waves-effect.waves-light.btn 로그인
 	br
 	br
-	a(href="/new") 회원가입
+	a.waves-effect.waves-light.btn(href="/new") 회원가입
 	script.
 		$('button').click(function(){
-			var id = $('input[name="id"]').val();
-			var pw = $('input[name="pw"]').val();
+			var id = $('#id').val();
+			var pw = $('#pw').val();
 			if ( id =="" || pw == ""){
-				alert("login again");
-				location.reload();
+				Materialize.toast('login again', 1000, '', function(){
+					location.reload();
+					});
 			} else{
 				$.post( "http://localhost:4000/login", { id: id, pw: pw } ).done(function( data ) {
 					if(data == "yes"){
-						alert("login success!");
-						location.href = '/main';
+						Materialize.toast('login success!', 1000, '', function(){
+							location.href = '/main';
+						});
 					} else {
-						alert("login failed..");
-						location.reload();
+						Materialize.toast('login failed..', 1000, '', function(){
+							location.reload();
+						});
 					}
 				});
 			}

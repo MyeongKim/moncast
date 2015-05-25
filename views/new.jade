@@ -2,24 +2,32 @@ extends layout
 
 block content
 	h3 회원가입 페이지
-	input(type="text" name="id" placeholder="Please enter your id")
-	input(type="text" name="pw" placeholder="Please enter your pw")
-	button(type="button") 가입하기
+	.row
+		.input-field.col.s3
+			input#id.validate(type='text')
+			label(for='first_name') Please enter your id
+		.input-field.col.s3
+			input#pw.validate(type='text')
+			label(for='last_name') Please enter your pw
+	button.waves-effect.waves-light.btn 회원가입
 	script.
 		$('button').click(function(){
-			var id = $('input[name="id"]').val();
-			var pw = $('input[name="pw"]').val();
+			var id = $('#id').val();
+			var pw = $('#pw').val();
 			if ( id =="" || pw == ""){
-				alert("enter correctly.");
-				location.reload();
+				Materialize.toast('enter correctly.', 1000, '', function(){
+					location.reload();
+				});
 			} else{
 				$.post( "http://localhost:4000/new", { id: id, pw: pw } ).done(function( data ) {
 					if(data == "yes"){
-						alert("Your id is created!");
-						location.href = '/';
+						Materialize.toast('Your id is created!', 1000, '', function(){
+							location.href = '/';
+						});
 					} else {
-						alert("you have to use another id.");
-						location.reload();
+						Materialize.toast('you have to use another id.', 1000, '', function(){
+							location.reload();
+						});
 					}
 				});
 			}
