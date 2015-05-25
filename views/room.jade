@@ -6,7 +6,7 @@ block content
 
 			var socket = io.connect('http://localhost:4000');
 			var roomId = '#{title}';
-			socket.emit('join:room', {roomId: roomId});
+			socket.emit('join:room', {roomId: roomId, name : '#{name}'});
 
 			//- var connect = function (ns) {
 			//- 	return io.connect('http://localhost:4000'+ns, {
@@ -27,12 +27,36 @@ block content
 				var messageHtml = "<span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></br>";
 				$('#output').append(messageHtml);
 			});
+			socket.on('add user', function(array){
+				$('#peopleCount').text(array.length);
+				$('#peopleList ul').empty();
+				for ( index in array){
+					$('#peopleList ul').append('<li>'+ array[index]+'</li>')
+				}
+			});
+
+			socket.on('user leaved', function(name){
+				$('#status').text("user " + name +"leaved");
+			});
+
+			socket.on('connect twice', function(){
+				alert('다른 창에서 실행되고 있습니다.');
+				socket.disconnect();
+				location.href = '/main';
+			});
+
+			socket.on('disconnect', function(){
+				alert('연결이 중단되었습니다..');
+				location.href = '/';
+			});
 		});
 	h3 Chat Room
 	h2 title : #{title_entered}
 	#people
-		#peopleCount
+		#peopleCount 0
 		#peopleList
+			ul
+	#status
 	#output
 	input(type="text" name="chatWords" placeholder="enter your words")
 	button(type="button") 전송

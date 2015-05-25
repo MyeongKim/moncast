@@ -137,37 +137,55 @@ app.get('/admin', function(req,res){
 });
 
 // socket.io
-var userNames = {};
+var userInRooms = {};
+var allUserId = {};
 var numUsers = 0;
 
-// var userId = {}; // Nicknames by socket.id
 var url = require('url');
 io.sockets.on('connection', function (socket) {
 
 	var addedUser = false;
 	socket.on('join:room', function(data){
-		socket.join('room' + data.roomId);
+		var roomId = data.roomId
+		if (userInRooms[roomId] == undefined){
+			userInRooms[roomId] = [];
+		}
+		console.log(data.name);
+		if ( userInRooms[roomId].indexOf(data.name) > -1 ){
+			console.log('duplicated connection');
+			// var index = userInRooms[roomId].indexOf(data.name);
+			// userInRooms[roomId].splice(index, 1);
+			io.to(socket.id).emit('connect twice');
+			// socket.disconnect();
+			return;
+		} else{
+			socket.join('room' + data.roomId);
+			userInRooms[roomId].push(data.name);
+			allUserId[socket.id] = data.name;
+			io.sockets.in('room'+roomId).emit('add user', userInRooms[roomId]);
+			console.log(userInRooms[roomId]);
+		}
 	});
 
 	socket.on('new message', function(obj){
 		io.sockets.in('room'+obj.roomId).emit('new message', obj);
 	});
 
-	// socket.on('add user', function(userName){
-	// 	socket.userName = userName;
-	// 	userNames[userName] = userName;
-	// 	++numUsers;
-	// 	addedUser = true;
-	// 	socket.emit('login', {
-	// 		numUsers : numUsers
-	// 	});
-	// });
-
-	// socket.broadcast.emit('user joined', {
-	// 	userName : socket.userName;
-	// 	numUsers : numUsers
-	// });
-
+	socket.on('disconnect', function(){
+		console.log('user disconnected');
+		for ( i = 0 ; i < Object.keys(userInRooms).length ; i++){
+			var roomId = Object.keys(userInRooms)[i];
+			var name = allUserId[socket.id];
+			var index = userInRooms[roomId].indexOf(name);
+			if ( index > -1){
+				console.log(' user leaved room');
+				userInRooms[roomId].splice(index, 1);
+				io.sockets.in('room'+roomId).emit('user leaved', name);
+				io.sockets.in('room'+roomId).emit('add user', userInRooms[roomId]);
+			}
+		};
+		delete allUserId[socket.id];
+	});
 
 	// 로컬에선 확인 안됨
 	// var userIp = socket.client.request.headers['x-forwarded-for'];
@@ -182,17 +200,6 @@ io.sockets.on('connection', function (socket) {
 
 	// console.log('connected ns: '+ns);
 	// socket.join(ns);
-
-	// io.of(ns).on('connection', function (socket) {
-	// 	console.log(' namespace connection');
-	// 	socket.on('new message', function(obj){
-	// 		console.log(obj);
-	// 		io.of(ns).emit('new message', obj);
-	// 	});
-	// 	socket.on('disconnect', function() {
-	// 		socket.disconnect();
-	// 	});
-	// });
 });
 
 function userCheck(id,pw){
