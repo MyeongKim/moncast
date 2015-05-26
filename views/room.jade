@@ -23,6 +23,11 @@ block content
 				socket.emit('new message', {roomId : roomId, msg : $msg.val(), name : '#{name}'});
 				$msg.val('');
 			});
+			$('input').keypress(function(e) {
+					if(e.which == 13) {
+						$('button').click();
+					}
+			});
 			socket.on('new message', function(obj){
 				var messageHtml = "<div class='messageHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></div>";
 				$('#output').append(messageHtml);
