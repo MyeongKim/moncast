@@ -1,0 +1,31 @@
+extends layout
+
+block content
+	h5 유저 정보
+	table
+		thead
+			tr
+				th(data-field='id') id
+				th(data-field='name') 이름
+				th(data-field='price') 최근 접속일
+		tbody
+			-var array = userData
+			-for(var item in array)
+				tr
+					td #{array[item].id}
+					td #{array[item].name}
+					td #{array[item].date}
+	h5 방 정보
+	table
+		thead
+			tr
+				th(data-field='id') title
+				th(data-field='name') 만든 사람
+				th(data-field='price') 생성 일시
+		tbody
+			-var array = roomData
+			-for(var item in array)
+				tr
+					td #{array[item].title_entered}
+					td #{array[item].bj}
+					td #{array[item].date}

@@ -1,0 +1,40 @@
+extends layout
+
+block content
+	h3 관리자 로그인 페이지 (id : admin, pw : admin)
+	.row
+		.input-field.col.s3
+			input#id.validate(type='text')
+			label(for='first_name') Please enter your id
+		.input-field.col.s3
+			input#pw.validate(type='password')
+			label(for='last_name') Please enter your pw
+	button.waves-effect.waves-light.btn.pink.lighten-4 로그인
+
+	script.
+		$('button').click(function(){
+			var id = $('#id').val();
+			var pw = $('#pw').val();
+			if ( id =="" || pw == ""){
+				Materialize.toast('login again', 1000, '', function(){
+					location.reload();
+					});
+			} else{
+				$.post( "http://localhost:4000/admin", { id: id, pw: pw } ).done(function( data ) {
+					if(data == "yes"){
+						Materialize.toast('login success!', 1000, '', function(){
+							location.href = '/admin_main';
+						});
+					} else {
+						Materialize.toast('login failed..', 1000, '', function(){
+							location.reload();
+						});
+					}
+				});
+			}
+		});
+		$('input').keypress(function(e) {
+					if(e.which == 13) {
+						$('button').click();
+					}
+		});

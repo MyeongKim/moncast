@@ -9,6 +9,8 @@ var params = require('express-params');
 
 var User = require('./app/models/schema').User;
 var Room = require('./app/models/schema').Room;
+var users = require('./app/controllers/users.js');
+var rooms = require('./app/controllers/rooms.js');
 
 var app = express();
 params.extend(app);
@@ -41,106 +43,41 @@ app.get('/new', function (req, res) {
 	res.render('new');
 });
 
-app.post('/new', function (req, res){
+app.post('/new', users.sign_up);
+app.post('/login', users.login);
+
+app.get('/admin', function(req,res){
+	res.render('admin');
+});
+
+app.post('/admin', function(req,res){
 	var id = req.body.id;
 	var pw = req.body.pw;
-	console.log("new id  " + "id : " + id + "pw : " + pw);
-	var query = User.findOne({});
-	query.where('id', id);
-	query.exec( function(err, result){
-		if (err) return handleError(err);
-		if (result){
-			console.log("이미 존재하는 아이디 ")
-			res.end("no");
-		} else{
-			console.log("아이디를 새로 생성합니다. ");
-			var user1 = new User ({
-				id : id,
-				name : id,
-				pw : pw
-			});
+	if ( id == "admin" && pw == "admin"){
+		res.end("yes");
+	} else{
+		res.end("no");
+	}
+});
 
-			user1.save(function(err, results){
-				console.log(results);
-			})
-			res.end("yes");
-		}
+app.get('/admin_main', function(req, res){
+	var userData, roomData;
+	var query1 = User.find({});
+	query1.exec( function(err, userData){
+		if (err) return handleError(err);
+		userData = userData;
+		var query2 = Room.find({});
+		query2.exec( function(err, roomData){
+			if (err) return handleError(err);
+			roomData = roomData;
+			res.render('admin_main', { userData : userData, roomData : roomData});
+		}); 
 	});
 });
 
-app.post('/login', function (req, res){
-	var id = req.body.id;
-	var pw = req.body.pw;
-	console.log("user login    " + "id : " + id + "pw : " + pw);
-	var query = User.findOne({});
-	query.where('id', id);
-	query.where('pw', pw);
-	query.exec( function(err, result){
-		if (err) return handleError(err);
-		if (result){
-			console.log("로그인 성공 ");
-			req.session.userId = req.body.id;
-			req.session.cookie.expires = false;
-			res.end("yes");
-		} else{
-			console.log("데이터가 없습니다.");
-			res.end("no");
-		}
-	});
-});
-
-app.get('/main',function (req, res){
-	var query = Room.find({});
-	query.exec( function(err, result){
-		if (err) return handleError(err);
-		if (result){
-			console.log("방 목록 가져오기 ");
-			// req.session.userId
-			console.log(result);
-			var num = 
-			res.render('main', {roomArray : result});
-		} else{
-			console.log("방이 하나도 없습니다.");
-			res.render('main');
-		}
-	});
-});
-
-app.post('/makeRoom', function(req, res){
-	var title_entered = req.body.title;
-	var title = title_entered.trim().replace(/\s/g,'');
-	var query = Room.find({});
-	query.where('title', title);
-	query.exec( function(err, result){
-		if (err) return handleError(err);
-		if (typeof result[0] !== 'undefined' ){
-			console.log(" 방 이름 중복 ");
-			console.log(result);
-			res.end('already used title');
-		} else{
-			var room = new Room ({
-				title : title,
-				title_entered : title_entered,
-				bj : req.session.userId
-			});
-			room.save(function(err, results){
-						console.log(results);
-						res.end("end");
-			});
-		}
-	});
-});
-
-app.get('/room/:room_title', function(req, res){
-	var title = req.params.room_title;
-	var query = Room.find({});
-	query.where('title', title);
-	query.exec( function(err, result){
-		if(err) return handleError(err);
-		console.log(result);
-		res.render('room', {title : req.params.room_title, title_entered : result[0].title_entered , name : req.session.userId, word : result[0].block});
-	})
-});
+app.get('/main', rooms.load_rooms);
+app.post('/makeRoom', rooms.make_room);
+app.get('/room/:room_title', rooms.get_room);
 
 app.get('/emo/:num', function(req, res){
 	var num = req.params.num;
@@ -148,10 +85,6 @@ app.get('/emo/:num', function(req, res){
 	var img = fs.readFileSync(path);
      res.writeHead(200, {'Content-Type': 'image/png' });
      res.end(img, 'binary');
-});
-
-app.get('/admin', function(req,res){
-	res.render('admin');
 });
 
 // socket.io
@@ -162,6 +95,10 @@ var numUsers = 0;
 var url = require('url');
 io.sockets.on('connection', function (socket) {
 
+	// 로컬에선 확인 안됨. 공통 아이피 사용시 유저 구분 방법
+	// var userIp = socket.client.request.headers['x-forwarded-for'];
+	// console.log("user Ip " + userIp+ "Connected");
+
 	var addedUser = false;
 	socket.on('join:room', function(data){
 		var roomId = data.roomId
@@ -171,17 +108,18 @@ io.sockets.on('connection', function (socket) {
 		console.log(data.name);
 		if ( userInRooms[roomId].indexOf(data.name) > -1 ){
 			console.log('duplicated connection');
-			// var index = userInRooms[roomId].indexOf(data.name);
-			// userInRooms[roomId].splice(index, 1);
 			io.to(socket.id).emit('connect twice');
-			// socket.disconnect();
 			return;
 		} else{
-			socket.join('room' + data.roomId);
-			userInRooms[roomId].push(data.name);
-			allUserId[socket.id] = data.name;
-			io.sockets.in('room'+roomId).emit('add user', userInRooms[roomId]);
-			console.log(userInRooms[roomId]);
+			var query = User.update({ name : data.name},  { $set: { date: new Date }});
+			query.exec( function(err, roomData){
+			if (err) return handleError(err);
+				socket.join('room' + data.roomId);
+				userInRooms[roomId].push(data.name);
+				allUserId[socket.id] = data.name;
+				io.sockets.in('room'+roomId).emit('add user', userInRooms[roomId]);
+				console.log(userInRooms[roomId]);
+			}); 
 		}
 	});
 
@@ -236,34 +174,6 @@ io.sockets.on('connection', function (socket) {
 		};
 		delete allUserId[socket.id];
 	});
-
-	// 로컬에선 확인 안됨
-	// var userIp = socket.client.request.headers['x-forwarded-for'];
-	// console.log("user Ip " + userIp+ "Connected");
-	// var userId[socke.id];
-
-	// var ns = url.parse(socket.handshake.url, true).query.ns;
-	// if (!ns) {
-	// 	socket.disconnect();
-	// 	return;
-	// }
-
-	// console.log('connected ns: '+ns);
-	// socket.join(ns);
 });
-
-function userCheck(id,pw){
-	var query = User.findOne({});
-	query.where('id', id);
-	query.where('pw', pw);
-	query.exec( function(err, result){
-		if (err) return handleError(err);
-		if (result){
-			console.log("로그인 성공 ");
-		} else{
-			console.log("데이터가 없습니다.");
-		}
-	});
-	};
 
 server.listen(4000);
