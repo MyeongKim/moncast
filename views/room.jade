@@ -47,9 +47,11 @@ block content
 				if (obj.msg.substr(0,3) == "emo"){
 					var emoHtml = "<div class='emoHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<img src=/emo/"+ obj.msg + "></img></div>";
 					$('#output').append(emoHtml);
+					$('#output').scrollTop(1000000);
 					} else{
 					var messageHtml = "<div class='messageHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></div>";
 					$('#output').append(messageHtml);
+					$('#output').scrollTop(1000000);
 				}
 			});
 			socket.on('message blocked', function(obj){
@@ -85,6 +87,7 @@ block content
 				var word = "<p>"+ obj.word +"</p>";
 				$('#blockWords').append(word);
 			});
+
 		});
 	h3 Chat Room
 	h2 title : #{title_entered}

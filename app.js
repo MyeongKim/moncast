@@ -25,7 +25,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(session({ resave: true,
 									saveUninitialized: true,
 									secret: 'uwotm8' }));
-
 // router
 app.get('/', function (req, res) {
 	// if (req.session.userId){
@@ -64,11 +63,17 @@ app.get('/admin_main', function(req, res){
 	var userData, roomData;
 	var query1 = User.find({});
 	query1.exec( function(err, userData){
-		if (err) return handleError(err);
+		if (err) {
+			throw new Error('어드민 페이지에서 에러 발생');
+			return handleError(err)
+		};
 		userData = userData;
 		var query2 = Room.find({});
 		query2.exec( function(err, roomData){
-			if (err) return handleError(err);
+			if (err) {
+				throw new Error('어드민 페이지에서 에러 발생');
+				return handleError(err)
+			};
 			roomData = roomData;
 			res.render('admin_main', { userData : userData, roomData : roomData});
 		}); 
@@ -85,6 +90,16 @@ app.get('/emo/:num', function(req, res){
 	var img = fs.readFileSync(path);
      res.writeHead(200, {'Content-Type': 'image/png' });
      res.end(img, 'binary');
+});
+
+// error handler
+app.use(function(err, req, res, next) {
+	if(!err) return next();
+	fs.appendFile('error_log.txt', err+'\r\n', function (err) {
+		if (err) throw err;
+		console.log('에러 로그를 저장했습니다.');
+		res.send("error!!!");
+	});
 });
 
 // socket.io
@@ -113,7 +128,10 @@ io.sockets.on('connection', function (socket) {
 		} else{
 			var query = User.update({ name : data.name},  { $set: { date: new Date }});
 			query.exec( function(err, roomData){
-			if (err) return handleError(err);
+			if (err) {
+				throw new Error('유저 커넥션시 document update error');
+				return handleError(err)
+			};
 				socket.join('room' + data.roomId);
 				userInRooms[roomId].push(data.name);
 				allUserId[socket.id] = data.name;
@@ -127,7 +145,10 @@ io.sockets.on('connection', function (socket) {
 		var query = Room.findOne({});
 		query.where('title', obj.roomId);
 		query.exec ( function(err, result){
-			if (err) return handleError(err);
+			if (err) {
+				throw new Error('채팅 메시지 전달 실패');
+				return handleError(err)
+			};
 			var blockArray = result.block;
 			var clear = true;
 			for ( i = 0 ; i < blockArray.length ; i++){
@@ -145,7 +166,10 @@ io.sockets.on('connection', function (socket) {
 	socket.on('blockWords', function(obj){
 		var query = Room.update({ title : obj.roomId},  { $push: { block: obj.word }});
 		query.exec( function(err, result){
-			if(err) return handleError(err);
+			if (err) {
+				throw new Error('금칙어 등록 실패');
+				return handleError(err)
+			};
 			console.log(result);
 			io.sockets.in('room'+obj.roomId).emit('blockWords', obj);
 		});
@@ -164,7 +188,10 @@ io.sockets.on('connection', function (socket) {
 					var query = Room.remove({});
 					query.where('title', roomId);
 					query.exec ( function(err, result){
-						if (err) return handleError(err);
+						if (err) {
+							throw new Error(' 빈 방 삭제 실패');
+							return handleError(err)
+						};
 						console.log(result);
 					});
 				}
@@ -175,5 +202,6 @@ io.sockets.on('connection', function (socket) {
 		delete allUserId[socket.id];
 	});
 });
+
 
 server.listen(4000);
