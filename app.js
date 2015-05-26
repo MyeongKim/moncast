@@ -1,4 +1,5 @@
 var path = require('path');
+var fs = require('fs');
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -25,6 +26,14 @@ app.use(session({ resave: true,
 
 // router
 app.get('/', function (req, res) {
+	// if (req.session.userId){
+	// 	res.redirect('/main');
+	// }
+	res.render('index');
+});
+
+app.get('/logout', function(req, res){
+	req.session.destroy();
 	res.render('index');
 });
 
@@ -88,6 +97,7 @@ app.get('/main',function (req, res){
 			console.log("방 목록 가져오기 ");
 			// req.session.userId
 			console.log(result);
+			var num = 
 			res.render('main', {roomArray : result});
 		} else{
 			console.log("방이 하나도 없습니다.");
@@ -128,8 +138,16 @@ app.get('/room/:room_title', function(req, res){
 	query.exec( function(err, result){
 		if(err) return handleError(err);
 		console.log(result);
-		res.render('room', {title : req.params.room_title, title_entered : result[0].title_entered , name : req.session.userId});
+		res.render('room', {title : req.params.room_title, title_entered : result[0].title_entered , name : req.session.userId, word : result[0].block});
 	})
+});
+
+app.get('/emo/:num', function(req, res){
+	var num = req.params.num;
+	var path = './public/img/' + num+ '.png';
+	var img = fs.readFileSync(path);
+     res.writeHead(200, {'Content-Type': 'image/png' });
+     res.end(img, 'binary');
 });
 
 app.get('/admin', function(req,res){
@@ -168,7 +186,31 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('new message', function(obj){
-		io.sockets.in('room'+obj.roomId).emit('new message', obj);
+		var query = Room.findOne({});
+		query.where('title', obj.roomId);
+		query.exec ( function(err, result){
+			if (err) return handleError(err);
+			var blockArray = result.block;
+			var clear = true;
+			for ( i = 0 ; i < blockArray.length ; i++){
+				if (obj.msg.indexOf(blockArray[i]) > -1 ){
+					io.sockets.to(socket.id).emit('message blocked');
+					clear = false;
+				}
+			}
+			if (clear){
+				io.sockets.in('room'+obj.roomId).emit('new message', obj);
+			}
+		}); 
+	});
+
+	socket.on('blockWords', function(obj){
+		var query = Room.update({ title : obj.roomId},  { $push: { block: obj.word }});
+		query.exec( function(err, result){
+			if(err) return handleError(err);
+			console.log(result);
+			io.sockets.in('room'+obj.roomId).emit('blockWords', obj);
+		});
 	});
 
 	socket.on('disconnect', function(){
@@ -180,6 +222,14 @@ io.sockets.on('connection', function (socket) {
 			if ( index > -1){
 				console.log(' user leaved room');
 				userInRooms[roomId].splice(index, 1);
+				if (userInRooms[roomId].length == 0){
+					var query = Room.remove({});
+					query.where('title', roomId);
+					query.exec ( function(err, result){
+						if (err) return handleError(err);
+						console.log(result);
+					});
+				}
 				io.sockets.in('room'+roomId).emit('user leaved', name);
 				io.sockets.in('room'+roomId).emit('add user', userInRooms[roomId]);
 			}

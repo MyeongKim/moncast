@@ -12,6 +12,7 @@ var roomSchema = new mongoose.Schema({
 	title_entered : String,
 	roomId : String,
 	bj : String,
+	block : [String],
 	pw : String} , { collection : 'rooms'});
 
 

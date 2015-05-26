@@ -17,20 +17,44 @@ block content
 			//- 	});
 			//- }
 			//- var socket = connect('/#{title}');
-			$('button').click(function(){
+			$('#bt1').click(function(){
 				var $msg = $("input[name='chatWords']");
 				if(!$msg.val()) return;
 				socket.emit('new message', {roomId : roomId, msg : $msg.val(), name : '#{name}'});
 				$msg.val('');
 			});
-			$('input').keypress(function(e) {
+			$('#bt2').click(function(){
+				var $msg = $("input[name='blockWords']");
+				if(!$msg.val()) return;
+				socket.emit('blockWords', {roomId : roomId, word : $msg.val()});
+				$msg.val('');
+			});
+			$('#dropdown1 span').click(function(event){
+				var emoId = event.target.id;
+				socket.emit('new message', {roomId : roomId, msg : emoId, name : '#{name}'});
+			});
+			$('input[name="chatWords"]').keypress(function(e) {
 					if(e.which == 13) {
-						$('button').click();
+						$('#bt1').click();
+					}
+			});
+			$('input[name="blockWords"]').keypress(function(e) {
+					if(e.which == 13) {
+						$('#bt2').click();
 					}
 			});
 			socket.on('new message', function(obj){
-				var messageHtml = "<div class='messageHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></div>";
-				$('#output').append(messageHtml);
+				if (obj.msg.substr(0,3) == "emo"){
+					var emoHtml = "<div class='emoHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<img src=/emo/"+ obj.msg + "></img></div>";
+					$('#output').append(emoHtml);
+					} else{
+					var messageHtml = "<div class='messageHtml'><span id="+ obj.name + ">"+ obj.name + " : "+"</span>"+"<span class='msgBody'>"+ obj.msg +"</span></div>";
+					$('#output').append(messageHtml);
+				}
+			});
+			socket.on('message blocked', function(obj){
+				Materialize.toast('금칙어가 포함되어 있습니다.', 1000, '', function(){
+				});
 			});
 			socket.on('add user', function(array){
 				$('#peopleCount').text(array.length);
@@ -41,7 +65,7 @@ block content
 			});
 
 			socket.on('user leaved', function(name){
-				$('#status').text("user " + name +"leaved");
+				$('#status').text("user " + name +"가 떠났습니다.");
 			});
 
 			socket.on('connect twice', function(){
@@ -56,20 +80,45 @@ block content
 					location.href = '/';
 				});
 			});
+
+			socket.on('blockWords', function(obj){
+				var word = "<p>"+ obj.word +"</p>";
+				$('#blockWords').append(word);
+			});
 		});
 	h3 Chat Room
 	h2 title : #{title_entered}
 	#people
-		#peopleCount 0
+		span 접속 인원수 : 
+		span#peopleCount 0
 		#peopleList
 			ul.collection
 				li.collection-item
 	.row
-		.col.s10
+		.col.s8
 			#status
 			#output
+		.col.s4
+			#blockWords
+				if word
+					each val in word
+						p #{val}
 	.row
-		.input-field.col.s10
+		.input-field.col.s6
 			input.validate(type='text' name="chatWords")
 			label enter your words
-		button.waves-effect.waves-light.btn 전송하기
+			button.waves-effect.waves-light.btn#bt1 전송하기
+		.col.s2
+			a.dropdown-button.btn(href='#', data-activates='dropdown1') 이모티콘
+			ul#dropdown1.dropdown-content
+				li
+					span#emo1 웃음
+				li
+					span#emo2 슬픔
+				li
+					span#emo3 화남
+		.input-field.col.s4
+			input.validate(type='text' name="blockWords")
+			label 금칙 단어
+			button.waves-effect.waves-light.btn#bt2 등록하기
+

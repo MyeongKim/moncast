@@ -7,6 +7,14 @@ button{
 	height: 500px;
 }
 
-.messageHtml{
+.messageHtml, .emoHtml{
 	margin: 10px;
+}
+
+#blockWords p{
+	color: red;
+}
+
+#output{
+	overflow:auto;
 }
